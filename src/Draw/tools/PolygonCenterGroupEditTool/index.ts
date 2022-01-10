@@ -76,7 +76,7 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
 
         if (event.modifiers.shift && hitTester.polygonHitResult) {
             if (hitTester.polygonHitResult.type === 'segment') {
-                hitTester.polygonHitResult.segment.remove();
+                (hitTester.polygonHitResult.item as Polygon).removeVertex(hitTester.polygonHitResult.segment);
             };
 
             return;
@@ -113,11 +113,15 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
 
         if (this.currentlyDraggedSegment) {
             (this.currentlyDraggedSegment.path as Polygon).registerVertexDragEnd();
-        } else
+
+            return;
+        } 
 
         if (this.currentlyDraggedPolygonGroup) {
             this.currentlyDraggedPolygonGroup.registerPolygonDragEnd();
-        } else 
+
+            return;
+        } 
 
         if (this.currentlyDraggedCenterPoint) {
             this.currentlyDraggedCenterPoint.getCenterGroup().registerCenterDragEnd();
