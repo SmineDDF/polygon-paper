@@ -10,14 +10,7 @@ export interface IDrawConfig {
     draggableCenterRadius: number;
 }
 
-export type OutputPolygonFormat = 'absolute' | 'relative';
-
 export type OnChangeEventHandler = (polygons: IPrimitivePolygonWithCenter[]) => void;
-
-export interface IDrawProps {
-    onChange: OnChangeEventHandler;
-    outputPolygonFormat: OutputPolygonFormat;
-}
 
 export interface IPrimitivePoint {
     x: number;

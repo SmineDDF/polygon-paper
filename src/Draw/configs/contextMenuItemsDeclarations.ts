@@ -18,20 +18,22 @@ const contextMenuItemsDeclarations: IContextMenuItemDeclaration[] = [
         activeHitTypes: ['fill', 'stroke', 'segment'],
         action: (hitResult: paper.HitResult) => {
             if (hitResult.item instanceof Polygon) {
-                hitResult.item.removeWithGroup();
+                hitResult.item.remove();
             }
         }
     },
     {
-        name: 'deleteSegment',
+        name: 'deleteVertex',
         label: 'Удалить вершину',
         activeHitTypes: ['segment'],
         action: (hitResult: paper.HitResult) => {
-            if (hitResult.item instanceof Polygon && hitResult.item.segments.length === 2) {
-                hitResult.item.removeWithGroup();
-            }
+            if (hitResult.item instanceof Polygon) {
+                if (hitResult.item.segments.length === 2) {
+                    hitResult.item.remove();
+                }
 
-            hitResult.segment.remove();
+                hitResult.item.removeVertex(hitResult.segment);
+            }
         }
     }
 ]

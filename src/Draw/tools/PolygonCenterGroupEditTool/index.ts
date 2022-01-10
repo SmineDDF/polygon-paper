@@ -8,6 +8,7 @@ import { HitTester } from '../../utils/hitTester';
 import { IAttachedTool, Tool } from '../Tool';
 
 class PolygonCenterGroupEditTool implements IAttachedTool {
+    private didDrag: boolean;
     private currentlyDraggedSegment: paper.Segment | null;
     private currentlyDraggedPolygonGroup: PolygonCenterGroup | null;
     private currentlyDraggedCenterPoint: DraggableCenterPoint | null;
@@ -16,6 +17,7 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
     private paperTool: Tool | null;
 
     constructor() {
+        this.didDrag = false;
         this.currentlyDraggedSegment = null;
         this.currentlyDraggedPolygonGroup = null;
         this.currentlyDraggedCenterPoint = null;
@@ -29,6 +31,7 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
         }
 
         this.paperTool.on('mousedown', this.onMouseDownHandler);
+        this.paperTool.on('mouseup', this.onMouseUpHandler);
         this.paperTool.on('mousemove', this.onMouseMoveHandler);
         this.paperTool.on('mousedrag', this.onMouseDragHandler);
         this.paperTool.on('keydown', this.onKeyDownHandler);
@@ -40,6 +43,7 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
         }
 
         this.paperTool.off('mousedown', this.onMouseDownHandler);
+        this.paperTool.off('mouseup', this.onMouseUpHandler);
         this.paperTool.off('mousemove', this.onMouseMoveHandler);
         this.paperTool.off('mousedrag', this.onMouseDragHandler);
         this.paperTool.off('keydown', this.onKeyDownHandler);
@@ -63,6 +67,7 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
             return;
         }
 
+        this.didDrag = false;
         this.currentlyDraggedSegment = null;
         this.currentlyDraggedPolygonGroup = null;
         this.currentlyDraggedCenterPoint = null;
@@ -101,6 +106,24 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
         this.clearClickSelection();
     }
 
+    private onMouseUpHandler = () => {
+        if (! this.didDrag) {
+            return;
+        }
+
+        if (this.currentlyDraggedSegment) {
+            (this.currentlyDraggedSegment.path as Polygon).registerVertexDragEnd();
+        } else
+
+        if (this.currentlyDraggedPolygonGroup) {
+            this.currentlyDraggedPolygonGroup.registerPolygonDragEnd();
+        } else 
+
+        if (this.currentlyDraggedCenterPoint) {
+            this.currentlyDraggedCenterPoint.getCenterGroup().registerCenterDragEnd();
+        }
+    }
+
     private onMouseMoveHandler = (event: paper.ToolEvent) => {
         paper.project.activeLayer.selected = false;
         
@@ -114,6 +137,8 @@ class PolygonCenterGroupEditTool implements IAttachedTool {
     }
 
     private onMouseDragHandler = (event: paper.ToolEvent) => {
+        this.didDrag = true;
+
         let whatToDrag;
 
         switch (true) {

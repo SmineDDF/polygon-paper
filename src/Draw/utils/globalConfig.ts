@@ -1,5 +1,5 @@
 import { IDrawConfig } from '../types';
-import { defaultConfig } from './defaultConfig';
+import { defaultConfig } from '../configs/defaultConfig';
 
 class GlobalConfig {
     private static config: IDrawConfig = { ...defaultConfig };

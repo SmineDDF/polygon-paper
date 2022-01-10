@@ -1,13 +1,13 @@
 import paper from 'paper';
-import debounce from 'lodash/debounce';
 
-import { IDrawConfig, IPrimitivePoint, IDrawProps, OutputPolygonFormat, OnChangeEventHandler } from './types';
+import { IDrawConfig, IPrimitivePoint, OnChangeEventHandler } from './types';
 import { GlobalConfig } from './utils/globalConfig'; 
-import { defaultConfig } from './utils/defaultConfig';
+import { defaultConfig } from './configs/defaultConfig';
 import { preventDefaultContextMenuBehavior } from './utils/preventDefaultContextMenuBehavior';
 
 import { Background } from './Background';
 import { PolygonCenterGroup } from './PolygonCenterGroup';
+import { PolygonCenterGroupChangeObserver } from './PolygonCenterGroupChangeObserver';
 
 import { Tool } from './tools/Tool';
 import { PolygonCenterGroupEditTool } from './tools/PolygonCenterGroupEditTool';
@@ -18,25 +18,27 @@ import { polygonColorGenerator } from './utils/polygonColorGenerator';
 import { polygonsToPayload } from './utils/polygonsToPayload';
 
 class Draw {
+    private onChange: null | OnChangeEventHandler;
     private paperTool: Tool | null;
-    private onChange: OnChangeEventHandler | null;
-    private onChangeOutputType: OutputPolygonFormat | null;
 
-    constructor(config: IDrawConfig = defaultConfig, onChangeProps?: IDrawProps) {
+    constructor(config: IDrawConfig = defaultConfig) {
         GlobalConfig.setAll(config);
         paper.settings.hitTolerance = GlobalConfig.get('pointerEventsTolerance');
-
-        this.onChange = onChangeProps?.onChange || null;
-        this.onChangeOutputType = onChangeProps?.outputPolygonFormat || null;
+        
+        this.onChange = null;
         this.paperTool = null;
     }
 
     public async init(canvas: HTMLCanvasElement, image: string) {
         paper.setup(canvas);
         preventDefaultContextMenuBehavior(canvas);
-
         await this.initBackgroundImage(image);
         this.initTools(); 
+        this.initObserver();
+    }
+
+    public setOnChangeListener(listener: OnChangeEventHandler) {
+        this.onChange = listener;
     }
 
     public drawPolygonsFromPrimitivePoints(primitivePointPolygons: IPrimitivePoint[][]) {
@@ -63,20 +65,6 @@ class Draw {
             this.drawPolygon(absPoints, polygonColorGenerator());
         });
     }
-
-    private initTools() {
-        this.paperTool = new Tool();
-
-        const polygonEditTool = new PolygonCenterGroupEditTool();
-        const contextMenuTool = new ContextMenuTool();
-        const drawingTool = new DrawingTool(this.handleDrawPolygon);
-
-        this.paperTool.attachTool(polygonEditTool);
-        this.paperTool.attachTool(contextMenuTool);
-        this.paperTool.attachTool(drawingTool);
-
-        this.paperTool.activateAllAttachedTools();
-    }
     
     private initBackgroundImage(image: string) {
         return new Promise(resolve => {
@@ -94,27 +82,44 @@ class Draw {
             };
         })
     }
+
+    private initTools() {
+        this.paperTool = new Tool();
+
+        const polygonEditTool = new PolygonCenterGroupEditTool();
+        const contextMenuTool = new ContextMenuTool();
+        const drawingTool = new DrawingTool(this.handleDrawPolygon);
+
+        this.paperTool.attachTool(polygonEditTool);
+        this.paperTool.attachTool(contextMenuTool);
+        this.paperTool.attachTool(drawingTool);
+
+        this.paperTool.activateAllAttachedTools();
+    }
+
+    private initObserver() {
+        PolygonCenterGroupChangeObserver.subscribe(this.handlePolygonChange);
+    }
+
+    private handlePolygonChange = () => {
+        if (! this.onChange) {
+            return;
+        }
+
+        const rawPolygons = paper.project.getItems({ class: PolygonCenterGroup }) as PolygonCenterGroup[];
+        const polygonsChangePayload = polygonsToPayload(rawPolygons);
+
+        this.onChange(polygonsChangePayload);
+    }
     
     private drawPolygon(points: paper.Point[], color: paper.Color) {
         const polygonGroup = PolygonCenterGroup.fromPoints(points);
         polygonGroup.setColor(color);
-        this.handleAnyPolygonChange();
     }
 
     private handleDrawPolygon = (points: paper.Point[]) => {
         this.drawPolygon(points, polygonColorGenerator());
     }
-
-    private handleAnyPolygonChange = debounce(() => {
-        if (this.onChange) {
-            this.onChange(
-                polygonsToPayload(
-                    paper.project.getItems({ class: PolygonCenterGroup }) as PolygonCenterGroup[],
-                    this.onChangeOutputType!
-                )
-            );
-        }
-    }, 200) 
 }
 
 export { Draw };

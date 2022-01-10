@@ -1,6 +1,6 @@
 import paper from 'paper';
 
-import { getRelevantMenuItemsDeclarations } from '../../../utils/contextMenuItemsDeclarations';
+import { getRelevantMenuItemsDeclarations } from '../../../configs/contextMenuItemsDeclarations';
 
 import { ContextMenuItem } from './ContextMenuItem';
 

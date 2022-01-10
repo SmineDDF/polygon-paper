@@ -1,6 +1,6 @@
 import paper from 'paper';
 
-import { IContextMenuItemDeclaration } from '../../../../utils/contextMenuItemsDeclarations';
+import { IContextMenuItemDeclaration } from '../../../../configs/contextMenuItemsDeclarations';
 
 interface IContextMenuItemContent {
     text: string;

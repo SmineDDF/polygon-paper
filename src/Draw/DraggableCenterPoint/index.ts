@@ -1,6 +1,7 @@
 import paper from 'paper';
 
 import { GlobalConfig } from '../utils/globalConfig';
+import { PolygonCenterGroup } from '../PolygonCenterGroup';
 
 class DraggableCenterPoint extends paper.Shape {
     constructor() {
@@ -12,7 +13,7 @@ class DraggableCenterPoint extends paper.Shape {
         );
     }
 
-    static create(center: paper.Point) {
+    static create(center: paper.Point): DraggableCenterPoint {
         const point = new paper.Shape.Circle({ 
             center,
             radius: GlobalConfig.get('draggableCenterRadius'),
@@ -24,7 +25,15 @@ class DraggableCenterPoint extends paper.Shape {
         point.onMouseEnter = this.onMouseEnterHandler;
         point.onMouseLeave = this.onMouseLeaveHandler;
 
-        return point;
+        return point as DraggableCenterPoint;
+    }
+
+    public getCenterGroup(): PolygonCenterGroup {
+        if (! (this.parent instanceof PolygonCenterGroup)) {
+            console.warn('Expected Polygon to have parent of type PolygonCenterGroup')
+        }
+
+        return this.parent as PolygonCenterGroup;
     }
 
     private static onMouseEnterHandler = () => { 

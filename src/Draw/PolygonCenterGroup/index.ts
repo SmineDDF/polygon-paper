@@ -2,6 +2,7 @@ import paper from 'paper';
 
 import { Polygon } from '../Polygon';
 import { DraggableCenterPoint } from '../DraggableCenterPoint';
+import { PolygonCenterGroupChangeObserver } from '../PolygonCenterGroupChangeObserver';
 
 class PolygonCenterGroup extends paper.Group {
     private polygonChild: Polygon;
@@ -17,6 +18,8 @@ class PolygonCenterGroup extends paper.Group {
 
         this.addChild(polygon);
         this.addChild(draggableCenter);
+
+        PolygonCenterGroupChangeObserver.polygonAddEventTrigger(this);
     }
 
     public static fromPoints(polygonPoints: paper.Point[], centerPoint?: paper.Point): PolygonCenterGroup {
@@ -37,6 +40,30 @@ class PolygonCenterGroup extends paper.Group {
         this.polygonChild.fillColor = color;
         this.polygonChild.strokeColor = color;
         this.draggableCenterChild.fillColor = color;
+    }
+
+    public remove(): boolean {
+        PolygonCenterGroupChangeObserver.polygonRemoveEventTrigger(this);
+
+        return super.remove();
+    }
+
+    public removeVertex(vertex: paper.Segment): boolean {
+        PolygonCenterGroupChangeObserver.vertexRemoveEventTrigger(this);
+
+        return vertex.remove();
+    }
+
+    public registerVertexDragEnd() {
+        PolygonCenterGroupChangeObserver.vertexMoveEventTrigger(this);
+    }
+
+    public registerCenterDragEnd() {
+        PolygonCenterGroupChangeObserver.centerMoveEventTrigger(this);
+    }
+
+    public registerPolygonDragEnd() {
+        PolygonCenterGroupChangeObserver.polygonMoveEventTrigger(this);
     }
 }
 
