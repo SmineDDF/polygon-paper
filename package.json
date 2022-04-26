@@ -1,12 +1,16 @@
 {
   "name": "polygon-paper",
   "version": "1.0.0",
-  "description": "",
+  "description": "Library for marking up images with user-created polygons made with paper.js",
   "main": "build/index.js",
   "scripts": {
     "build": "rm -rf build && node_modules/.bin/webpack"
   },
   "author": "smineddf",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SmineDDF/polygon-paper"
+  },
   "dependencies": {
     "paper": "0.12.15"
   },
