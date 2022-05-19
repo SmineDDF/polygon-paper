@@ -1,27 +1,26 @@
-# Библиотека для разметки картинки полигонами
+# Marking images up with polygon shapes
 npm: [polygon-paper](https://www.npmjs.com/package/polygon-paper)
 
-Сделано с помощью [paper.js](https://github.com/paperjs/paper.js)
+Made with [paper.js](https://github.com/paperjs/paper.js)
 
-## Что делает: 
-Даёт возможность нарисовать один или несколько полигонов на изображении и получить координаты их вершин и центра в виде JS-объектов.
-Центр можно двигать отдельно.
+[Readme на русском](./readme-ru.md)
 
-## Для чего:
-Например, для внутренней разметки изображений. Чтобы красиво подсветить какие-то участки изображения и показать около них подсказку,
-сначала нужно знать, что именно нужно подсвечивать.
+## What is it:
+It's a tool to draw polygons on an image and save them as coordinate arrays (vertexes + center point).
 
-## Как это выглядит
+## What it could be used for:
+If you need to highlight a part of an image when a user hovers over it, first you need to know where is this hoverable zone located. Someone somewhere needs to draw the hoverable zone shape and send this data over to the website. And that is a use case for this library.
+
+## How it looks like
 ![img](./readme-example.png)
 
-_Цвета выбираются псевдослучайно, см. [src/utils/polygonColorGenerator.ts](./src/utils/polygonColorGenerator.ts)_
+_Color selection is pseudo-random [src/utils/polygonColorGenerator.ts](./src/utils/polygonColorGenerator.ts)_
 
-## Установка и подключение
-1. Установить библиотеку: `npm install polygon-paper`
-2. Создать `canvas`-элемент на странице с заданными высотой и шириной: `<canvas width="1000" height="1000" id="mycanvas" />`
-Canvas-элемент будет сжиматься по одной из сторон в зависимости от пропорций картинки. Например, если картинка имеет разрешение 500x200 (ширина x высота), canvas из примера выше уменьшится до 1000x400 - сохраняя оригинальную максимальную ширину, но уменьшая высоту, чтобы итоговый canvas был пропорционален картинке.
-1. Импортировать библиотеку: `import { Draw } from 'polygon-paper'`
-2. Создать экземпляр класса `Draw` и инициализировать его, передав в него ссылку на ранее созданный canvas и url картинки для разметки:
+## Installation nad usage
+1. Install the library from npm: `npm install polygon-paper`
+2. Create a `canvas` element with set width and height: `<canvas width="1000" height="1000" id="mycanvas" />` _`canvas` will shrink one of its sides to fit the aspect ratio of the loaded image_
+3. Import the library: `import { Draw } from 'polygon-paper'`
+4. Create an instance of `Draw` class and initialize it using previuosly created `canvas` DOM node and image url:
 ```js
 const draw = new Draw();
 const canvasElement = document.getElementById("mycanvas");
@@ -29,23 +28,25 @@ const imageUrl = "https://resource.com/image-to-draw-on.png";
 
 draw.init(canvasElement, imageUrl);
 ```
-Опционально, в конструктор `new Draw()` можно передать объект с настройками, о нём в разделе *API*.
+Constructor `new Draw(config?: IDrawConfig)` also accepts an optional config object.
 
-Опционально, в `draw.init(canvasElement, imageUrl, initialPolygons)` можно передать массив с полигонами (initialPolygons), которые надо отрисовать изначально (например, сохранённые ранее и загруженные в текущей сессии). О структуре полигонов, которые нужно передать, смотрите в разделе *API*.
+`draw.init(canvasElement: HTMLCanvasElement, imageUrl: string, initialPolygons?: IPolygonWithCenter[])` accepts an optional array of initial polygons as its third argument. That could be used to load and edit already created polygons.
 
-5. Для получения информации об изменении полигонов, установить коллбэк-функцию:
+More details on that in *API* section.
+
+5. Set up a callback function to track changes to the polygons:
 ```js
 const myCallback = (newPolygonArray) => { doSomethingWithPolygons(newPolygonArray); }
 
 draw.setOnChangeListener(myCallback);
 ```
-Коллбэк вызывается каждый раз, когда создаётся/передвигается/удаляется один из полигонов или когда создаётся/передвигается/удаляется одна из вершин существущих полигонов, или же передвигается центральная точка одного из полигонов. Также коллбэк вызывается во время изменения `payload` полигона c помощью функции `draw.setPolygonPayloadByIndex(index, payload)` (об этом также в разделе API).
+Callback is called every time a polygon is created / moved / deleted, or when a polygon's vertex is created / moved / deleted or when the central point of a polygon is moved. The callback is also called when a polygon's payload is changed with `draw.setPolygonPayloadByIndex`.
 
-6. Во время завершения работы библиотеки рекомендуется (но не обязательно) вызвать `draw.destroy()` - это удалит подписку на изменение полигонов и вернёт некоторые хендлеры дефолтного поведения элементу canvas.
+1. It is advised to call `draw.destroy()` when the library is not used anymore.
 
 ## API
-### Типы
-#### Формат полигонов
+### Types
+#### Polygon format
 ```ts
 interface IPoint {
     x: number;
@@ -53,12 +54,11 @@ interface IPoint {
 }
 ```
 
-**Важно: координаты точек относительны к размеру canvas**.
-К примеру, точка, имеющая абсолютные координаты `{ x: 200, y: 300 }`, сгенерированная на canvas
-размером `1000x500`, будет иметь координаты `{ x: 0.2, y: 0.6 }`, то есть, абсолютная координата будет
-поделена на длину соответствующей ей стороны (`x` - на ширину, `y` - на высоту).
+**Important: the coordinates are relative to the canvas dimensions**.
 
-Такой подход позволяет устранить возможные проблемы, связаные с разрешением картинки: чтобы получить абсолютные координаты достаточно умножить относительные координаты на размеры картинки в конкретной интерфейсной реализации.
+For example, a vertex with absolute coordinates of `{ x: 200, y: 300 }`, that is generated on a canvas of size `1000x500` will have relative coordinates of `{ x: 0.2, y: 0.6 }`. So that the absolute `x` coordinate will be divided by image's `width` and the absolute `y` is divided by image's `height`.
+
+This approach allows us to prevent possible issues with images changing their resolution.
 
 ```ts
 interface IPolygonWithCenter {
@@ -68,136 +68,126 @@ interface IPolygonWithCenter {
     color?: string;
 }
 ```
+_the format of a polygon that is passed to on change callback_
 
-#### Объект настроек, которые передаются в конструктор `new Draw(config)`:
+#### Constructor config `new Draw(config: IDrawConfig)`:
 ```ts
 interface IDrawConfig {
-    // дистанция срабатывания клика на элементах
-    // например, при перетаскивании вершины полигона,
-    // это значение устанавливает насколько далеко от точного пикселя вершины
-    // можно кликнуть, чтобы начать "тащить" эту вершину, а не
-    // начать рисовать новый полигон
+    // the distance of click registering
+    // e.g., when you want to drag a vertex, this distance will add a
+    // "padding" to the vertex, so that when you don't hit the exact coordinate of it,
+    // the click will still be registered as "start dragging" instead of
+    // "start creating new polygon near the vertex
     pointerEventsTolerance: number;
 
-    // прозрачность полигонов, от 0 до 1
+    // polygon body opacity, value: from 0 to 1
     polygonTransparency: number;
 
-    // радиус кружка-центра полигона
-    // игнорируется при наличии текста в центре (см. centerPointLabelFormatter)
+    // polygon center radius
+    // it is ignored if polygon has a label set with centerPointLabelFormatter
     draggableCenterCircleRadius: number;
 
-    // на сколько будет увеличиваться изображение при зуме
-    // например, 0.1 будет значить, что при зуме площадь изображения будет увеличиваться на 10%
+    // magnification factor when scrolling to zoom
+    // value of 0.1 would mean that every time a zoom happens, the image will be
+    // scaled by 10%
     zoomFactor: number;
 
-    // форматтер, который будет строить текст, который нужно отобразить в
-    // центре полигона; 
-    // текст строится из payload полигона;
-    // в случае возвращения null из форматтера,
-    // в центре будет отображён обычный кружок
+    // formatter that builds a label to be displayed as a center of polygon instead of a circle
+    // builds the label from payload assigned to a polygon
     centerPointLabelFormatter: (polygonCenterGroupPayload: Record<string, unknown>) => string | null;
 
-    // размер шрифта для текста, отображаемого в центре полигона
     centerPointLabelFontSize: number;
 
-    // если true, то центры полигонов будут скрыты
     centerPointsHidden: boolean;
 
-    // если true, то вызывает window.confirm перед удалением полигона
-    // через delete или контекстное меню
+    // if set to true, calls window.confirm before deleting a polygon
     shouldConfirmPolygonDeletion: boolean;
 
-    // текст при подтверждении удаления полигона
+    // text to be displayed in delete confirmation window.confirm modal
     labelDeletePolygonConfirm: string;
 
-    // текст на кнопке удаления полигона в контекстном меню
+    // text to be displayed on context menu button "delete polygon"
     labelDeletePolygon: string;
 
-    // текст на кнопке удаления вершины полигона в контекстном меню
+    // text to be displayed on context menu button "delete polygon vertex"
     labelDeleteVertex: string;
 }
 ```
 
-### Управление
-#### Создание полигона
-Для создания полигона с центром надо "накликать" по холсту как минимум три точки и соединить первую точку с последней.
+### Controls 
+#### Creating polygon 
+Click on an empty space on canvas to pin the first vertex. Continue pinning vertexes until you are done, then connect the last vertex to the first one.
 
-Первый клик не должен попасть на уже существующий полигон, остальные могут.
+#### Editing polygon
+- Drag'n'drop polygon by it's body
+- Drag'n'drop vertexes
+- Drag'n'drop polygon centers
+- Add a new vertex by dragging an edge or by right-clicking an edge and choosing "add vertex" in context menu
+- Delete a vertex by left-clicking it while holding `shift`, or by right-clicking it and choosing "delete vertex" in context menu
 
-#### Изменение полигона
-- Полигон можно перетащить целиком, drag-n-drop'нув его за тело
-- Можно перетащить отдельную вершину полигона
-- Добавить новую вершину полигона можно, кликнув на ребро (или сразу "тащить" новую точку из ребра)
-- Удалить вершину можно, кликнув по ней с зажатым `shift`, либо через ПКМ-клик для открытия контекстного меню и пункт "Удалить вершину" в нём
+#### Deleting polygon
+- Select a polygon by clicking it's body and press `delete`
+- Right-click polygon body and select "delete polygon" in context menu
+- Delete a polygon programmatically by invoking `deletePolygonByIndex`
 
-#### Удаление полигона
-- Выделить полигон, кликнув на его тело и нажать `delete`
-- Или ПКМ-клик по телу полигона для открытия контекстного меню и "Удалить полигон"
-- Или извне через публичный метод `deletePolygonByIndex`
-
-
-### Публичные методы Draw
+### Draw instance public methods
 #### init
 ```ts
 draw.init(canvas: HTMLCanvasElement, imgUrl: string, initialPolygons: IPolygonWithCenter[]): void
 ```
-Инициализация библиотеки: загрузка картинки, изменение пропорций canvas'a, подключение внутренних обработчиков.
-Поле `color` в объектах `initialPolygons` игнорируется, библиотека выбирает цвет по внутреннему алгоритму.
+Load an image, resize canvas to fit this image and set up internal event handlers and set up internal event handlers.
 
 #### destroy
 ```ts
 draw.destroy(): void
 ```
-Удаление overwrite'ов дефолтных поведений canvas'а, удаление коллбэка, установленного с помощью `setOnChangeListener`.
+Remove part of internal handlers that are altering canvas's behavior, remove polygon change callback set via `setOnChangeListener`.
 
 #### setOnChangeListener
 ```ts
 draw.setOnChangeListener(null | (newPolygons: IPolygonWithCenter[]) => void): void
 ```
-Добавление или изменение листенера изменений в полигонах.
+Add a callback to be called when a polygon is added / changed / deleted.
 
 #### highlightPolygonByIndex
 ```ts
 draw.highlightPolygonByIndex(index: number): void
 ```
-"Подсветить" полигон белым цветом для быстрого нахождения. Сбрасывает подсветку ранее подсвеченых полигонов.
-Может использоваться, например, для подсветки полигона на canvas'e при ховере по внешнему элементу.
+Highlight a polygon with a semi-transparent white overlay above it. Unhighlights previously highlighted polygons.
 
 #### unhighlightPolygons
 ```ts
 draw.unhighlightPolygons(): void
 ```
-Убрать подсветку со всех полигонов.
+Unhighlight all highlighted polygons.
 
 #### deletePolygonByIndex
 ```ts
 draw.deletePolygonByIndex(index: number): void
 ```
-Удалить полигон по индексу извне библиотеки.
-Индекс консистентен с массивом, возвращаемым в коллбэк из `setOnChangeListener`.
+Delete polygon by index. Indexes are consistent with the indexes of array returned by `setOnChangeListener` callback.
 
 #### setPolygonPayloadByIndex
 ```ts
 draw.setPolygonPayloadByIndex(index: number, payload: null | Record<string, unknown>): void
 ```
-Установить `payload` полигону. При вызове этой функции, в коллбэк из `setOnChangeListener` бросается событие.
-`payload` может быть любым key-value объектом. 
+Assign a `payload` to a polygon. Fires `setOnChangeListener` callback.
+Payload should be an object.
 
 #### setConfigField
 ```ts
 draw.setConfigField<T extends keyof IDrawConfig>(field: T, fieldValue: IDrawConfig[T]);
 ```
-Установить поле конфига и перерисовать канвас с учётом обновлённого поля.
+Change one of config fields and rerender polygons with new config.
 
 #### setConfig
 ```ts
 draw.setConfig(field: Partial<IDrawConfig>);
 ```
-Установить новый объект конфига (если какие-то из полей отсутствуют в новом конфиге, они будут взяты из прежнего)
-и перерисовать канвас с учётом нового конфига.
+Change the config and rerender polygons with the new one.
 
-# Ограничения
-Размер минифицированного кода библиотеки - `368 KB`. Подумайте перед тем, как затаскивать это в сервис, для которого скорость критична.
+# Limitations 
+1. Minified bundle size is `368 KB`, which is not good. Consider using it only in internal interfaces where loading speed is not critical.
+2. It is not intended for mobile devices. Mouse event handlers used in this library aren't fired on touch events. It might be fixed by replacing them with touch-including events and adding a few new handlers.
+3. I expect the library to malfunction if there are multiple instances of it on a page. Haven't checked that yet.
 
-Ожидаются проблемы с работой библиотеки в условиях, когда на одной странице должно быть несколько "рисовалок". В коде используется глобальный скоуп
-paperjs, автоматически привязываемый к текущему canvas'у. Это может быть исправлено при необходимости.
